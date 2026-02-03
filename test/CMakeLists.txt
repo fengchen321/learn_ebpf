@@ -154,3 +154,10 @@ ebpf_add_program(
   SRC src/kprobe_unlink.bpf.c
   USER_SRC src/kprobe_unlink.c
 )
+
+ebpf_add_program(
+  NAME uprobe_add
+  SRC src/uprobe_add.bpf.c
+  USER_SRC src/uprobe_add.c
+)
+add_executable(uprobe_add_target src/uprobe_add_target.c)
