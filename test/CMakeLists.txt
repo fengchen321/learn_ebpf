@@ -161,3 +161,22 @@ ebpf_add_program(
   USER_SRC src/uprobe_add.c
 )
 add_executable(uprobe_add_target src/uprobe_add_target.c)
+
+# user_space_map - 直接测试 BPF map，不依赖 skel.h
+add_executable(user_space_map src/user_space_map.c)
+target_include_directories(user_space_map PRIVATE
+  ${LIBBPF_INCLUDE_DIR}
+)
+target_link_libraries(user_space_map PRIVATE
+  ${LIBBPF_STATIC_LIB}
+  ${LIBELF}
+  ${LIBZ}
+  ${LIBPTHREAD}
+  ${LIBM}
+)
+
+ebpf_add_program(
+  NAME kernel_and_user_map
+  SRC src/kernel_and_user_map.bpf.c
+  USER_SRC src/kernel_and_user_map.c
+)
