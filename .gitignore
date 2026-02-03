@@ -1,0 +1,5 @@
+test/build/
+build
+*.o
+*.skel.h
+
