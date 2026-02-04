@@ -6,7 +6,7 @@
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
 SEC("kprobe/do_unlinkat")
-int BPF_KPROBE(do_unlink_at, int dfd, struct filename *name)
+int BPF_KPROBE(do_unlinkat, int dfd, struct filename *name)
 {
     const char* fileName;
     fileName = BPF_CORE_READ(name, name);

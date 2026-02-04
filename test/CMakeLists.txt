@@ -180,3 +180,15 @@ ebpf_add_program(
   SRC src/kernel_and_user_map.bpf.c
   USER_SRC src/kernel_and_user_map.c
 )
+
+ebpf_add_program(
+  NAME kprobe_unlink_perfbuffer
+  SRC src/kprobe_unlink_perfbuffer.bpf.c
+  USER_SRC src/kprobe_unlink_perfbuffer.c
+)
+
+ebpf_add_program(
+  NAME kprobe_unlink_ringbuffer
+  SRC src/kprobe_unlink_ringbuffer.bpf.c
+  USER_SRC src/kprobe_unlink_ringbuffer.c
+)
