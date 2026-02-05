@@ -192,3 +192,15 @@ ebpf_add_program(
   SRC src/kprobe_unlink_ringbuffer.bpf.c
   USER_SRC src/kprobe_unlink_ringbuffer.c
 )
+
+ebpf_add_program(
+  NAME tp_unlink
+  SRC src/tp_unlink.bpf.c
+  USER_SRC src/tp_unlink.c
+)
+
+ebpf_add_program(
+  NAME raw_tp_unlink
+  SRC src/raw_tp_unlink.bpf.c
+  USER_SRC src/raw_tp_unlink.c
+)
