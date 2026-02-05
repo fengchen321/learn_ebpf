@@ -204,3 +204,9 @@ ebpf_add_program(
   SRC src/raw_tp_unlink.bpf.c
   USER_SRC src/raw_tp_unlink.c
 )
+
+ebpf_add_program(
+  NAME btf
+  SRC src/btf.bpf.c
+  USER_SRC src/btf.c
+)

@@ -9,6 +9,8 @@ char LICENSE[] SEC("license") = "Dual BSD/GPL";
 SEC("raw_tp/sys_enter")
 int raw_trace_enter_unlinkat(struct bpf_raw_tracepoint_args *ctx)
 {
+    // grep -r "__NR_unlinkat" /usr/include/
+    // cat /usr/include/asm/unistd_64.h | grep unlinkat
     #define __NR_unlinkat 263
     long syscall_id = ctx->args[1];
     if (syscall_id != __NR_unlinkat) {
