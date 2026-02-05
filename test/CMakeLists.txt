@@ -210,3 +210,15 @@ ebpf_add_program(
   SRC src/btf.bpf.c
   USER_SRC src/btf.c
 )
+
+ebpf_add_program(
+  NAME tc_ingress
+  SRC src/tc_ingress.bpf.c
+  USER_SRC src/tc_ingress.c
+)
+
+ebpf_add_program(
+  NAME tc_egress
+  SRC src/tc_egress.bpf.c
+  USER_SRC src/tc_egress.c
+)

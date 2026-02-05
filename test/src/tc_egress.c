@@ -1,0 +1,107 @@
+// SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
+/* Copyright (c) 2022 Hengqi Chen */
+// https://github.com/libbpf/libbpf-bootstrap/blob/master/examples/c/tc.c
+// sudo ./tc_egress eth4 -> ping 8.8.8.8 -I eth4
+#include <signal.h>
+#include <unistd.h>
+#include "tc_egress.skel.h"
+
+#define LO_IFINDEX 1
+
+static volatile sig_atomic_t exiting = 0;
+
+static void sig_int(int signo)
+{
+	exiting = 1;
+}
+
+static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
+{
+	return vfprintf(stderr, format, args);
+}
+
+int main(int argc, char **argv)
+{
+	LIBBPF_OPTS(bpf_tc_hook, tc_hook);
+    LIBBPF_OPTS(bpf_tc_opts, tc_opts);
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <ifname>\n", argv[0]);
+        fprintf(stderr, "Example: %s eth0\n", argv[0]);
+        return 1;
+    }
+
+    int ifindex = if_nametoindex(argv[1]);
+    if (ifindex == 0) {
+        fprintf(stderr, "Failed to get ifindex for %s: %s\n",
+                argv[1], strerror(errno));
+        return 1;
+    }
+    printf("Attaching TC Egress filter to interface: %s (ifindex=%d)\n",
+           argv[1], ifindex);
+
+    tc_hook.ifindex = ifindex;
+    tc_hook.attach_point = BPF_TC_EGRESS;
+
+	// DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = LO_IFINDEX,
+	// 		    .attach_point = BPF_TC_EGRESS);
+	// DECLARE_LIBBPF_OPTS(bpf_tc_opts, tc_opts, .handle = 1, .priority = 1);
+	bool hook_created = false;
+	struct tc_egress_bpf *skel;
+	int err;
+
+	libbpf_set_print(libbpf_print_fn);
+
+	skel = tc_egress_bpf__open_and_load();
+	if (!skel) {
+		fprintf(stderr, "Failed to open BPF skeleton\n");
+		return 1;
+	}
+
+	/* The hook (i.e. qdisc) may already exists because:
+	 *   1. it is created by other processes or users
+	 *   2. or since we are attaching to the TC engress ONLY,
+	 *      bpf_tc_hook_destroy does NOT really remove the qdisc,
+	 *      there may be an egress filter on the qdisc
+	 */
+	err = bpf_tc_hook_create(&tc_hook);
+	if (!err)
+		hook_created = true;
+	if (err && err != -EEXIST) {
+		fprintf(stderr, "Failed to create TC hook: %d\n", err);
+		goto cleanup;
+	}
+
+	tc_opts.prog_fd = bpf_program__fd(skel->progs.tc_egress_filter);
+	err = bpf_tc_attach(&tc_hook, &tc_opts);
+	if (err) {
+		fprintf(stderr, "Failed to attach TC: %d\n", err);
+		goto cleanup;
+	}
+
+	if (signal(SIGINT, sig_int) == SIG_ERR) {
+		err = errno;
+		fprintf(stderr, "Can't set signal handler: %s\n", strerror(errno));
+		goto cleanup;
+	}
+
+	printf("Successfully started! Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` "
+	       "to see output of the BPF program.\n");
+
+	while (!exiting) {
+		fprintf(stderr, ".");
+		sleep(1);
+	}
+
+	tc_opts.flags = tc_opts.prog_fd = tc_opts.prog_id = 0;
+	err = bpf_tc_detach(&tc_hook, &tc_opts);
+	if (err) {
+		fprintf(stderr, "Failed to detach TC: %d\n", err);
+		goto cleanup;
+	}
+
+cleanup:
+	if (hook_created)
+		bpf_tc_hook_destroy(&tc_hook);
+	tc_egress_bpf__destroy(skel);
+	return -err;
+}
