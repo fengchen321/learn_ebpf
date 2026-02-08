@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 
 	/* The hook (i.e. qdisc) may already exists because:
 	 *   1. it is created by other processes or users
-	 *   2. or since we are attaching to the TC engress ONLY,
+	 *   2. or since we are attaching to the TC egress ONLY,
 	 *      bpf_tc_hook_destroy does NOT really remove the qdisc,
 	 *      there may be an egress filter on the qdisc
 	 */

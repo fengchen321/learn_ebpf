@@ -24,13 +24,14 @@ int raw_trace_enter_unlinkat(struct bpf_raw_tracepoint_args *ctx)
     
     // view parameter details:
     // int unlinkat(int dfd, const char *pathname, int flag);
-    // args[0] = struct pt_regs * 寄存器状态指针
+    // args[0] = struct pt_regs *  args[0] 保存 struct pt_regs * 指针
     // args[1] = long syscall_id 系统调用号
     struct pt_regs *regs = (struct pt_regs *)ctx->args[0];
 
     const char* user_filename = (const char*)PT_REGS_PARM2_CORE(regs);
 
     char filename[256] = {};
+    // 从用户空间读取字符串参数
     bpf_probe_read_user_str(filename, sizeof(filename), user_filename);
     
     bpf_printk("tracepoint triggered, pid: %d, comm: %s, filename: %s\n", pid, comm, filename);

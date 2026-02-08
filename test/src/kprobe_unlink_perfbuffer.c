@@ -19,7 +19,7 @@ void signal_handler(int sig)
     running = false;
 }
 
-void handle_event_callback(void *ctx, int cpu, void *data, __u64 data_size)
+void handle_event_callback(void *ctx, int cpu, void *data, __u32 data_size)
 {
     const struct event *evt = data;
     printf("%-8s %-6d %-16s %s\n", "UNLINK", evt->pid, evt->comm, evt->filename);

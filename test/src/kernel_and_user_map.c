@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     int err;
 
     __u32 next_key;
-    bool hsa_next = false;
+    bool has_next = false;
 
     signal(SIGINT, signal_handler);  // Handle Ctrl+C
     signal(SIGTERM, signal_handler);  // Handle termination signals
@@ -44,13 +44,13 @@ int main(int argc, char **argv) {
 
     while (running) {
         next_key = 0;
-        hsa_next = true;
-        while (hsa_next) {
+        has_next = true;
+        while (has_next) {
             int map_fd = bpf_map__fd(skel->maps.process_map);
             err = bpf_map_get_next_key(map_fd, &next_key, &next_key);
             if (err) {
                 if (errno == ENOENT) {
-                    hsa_next = false;
+                    has_next = false;
                     continue;
                 } else {
                     fprintf(stderr, "Error getting next key: %s\n", strerror(errno));

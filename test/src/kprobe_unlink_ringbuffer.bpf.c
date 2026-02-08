@@ -10,7 +10,7 @@ struct event{
     char comm[16];
     char filename[256];
 };
-// perf event array map to send data to user space
+
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, RINGBUF_SIZE);

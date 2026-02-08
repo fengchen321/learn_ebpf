@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     printf("Successfully started! Please run the target program to trigger the uprobe.\n");
     printf("Monitoring functions 'uprobe_add' and its return value in %s\n", target_program_path);
     printf("Please run \"sudo cat /sys/kernel/debug/tracing/trace_pipe\" to see the output in another terminal.\n");
-    printf("The run the target program like this:\n");
+    printf("Then run the target program like this:\n");
     printf("    %s %s\n", argv[0], target_program_path);
     printf("Press Ctrl+C to exit and clean up.\n");
     while (1) {

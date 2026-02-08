@@ -62,7 +62,7 @@ int trace_exit(struct trace_event_raw_sys_exit* ctx)
     // method 1: bpf_get_current_task + BPF_CORE_READ
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
     evt.ppid = BPF_CORE_READ(task, real_parent, pid);
-    // error : event.ppid = task->real_parent->pid; 
+    // error usage : event.ppid = task->real_parent->pid; 
 
     // method 2: bpf_get_current_task_btf + BPF_CORE_READ
     // struct task_struct *task = (struct task_struct *)bpf_get_current_task_btf();

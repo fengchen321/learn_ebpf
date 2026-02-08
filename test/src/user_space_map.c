@@ -33,7 +33,7 @@ static void test_hashmap()
 {
     long long key, value;
 	int fd;
-    int ret = -1;//store return value
+    int ret = -1;  // store return value
 
     //1. create hash type map, use bpf_map_create() function
     const char* map_name = "my first bpf map";
@@ -63,7 +63,7 @@ static void test_hashmap()
     printf("bpf_map_update_elem insert second element ret: %d\n", ret);
 
     printf("\nStep 2: after insert, print hashmap elements\n");
-    iterate_hash_map(fd, key_size, value);
+    iterate_hash_map(fd, key_size, value_size);
 
     //3. lookup element exist or not,use bpf_map_lookup_elem() function
     long long findKey, findValue;
@@ -89,7 +89,7 @@ static void test_hashmap()
     printf("bpf_map_update_elem update already exist element ret: %d, key:%lld, value:%lld\n", ret, updateKey, updateValue);
     
     printf("\nafter update, hashmap elements:\n");
-    iterate_hash_map(fd, key_size, value);
+    iterate_hash_map(fd, key_size, value_size);
 
     //5. delete element,use bpf_map_delete_elem() function
     long long deleteKey;
@@ -99,7 +99,7 @@ static void test_hashmap()
     printf("bpf_map_delete_elem delete element ret: %d, key:%lld\n", ret, deleteKey);
 
     printf("\nafter delete, hashmap elements:\n");
-    iterate_hash_map(fd, key_size, value);
+    iterate_hash_map(fd, key_size, value_size);
 }
 
 int main(void)

@@ -19,10 +19,11 @@ void signal_handler(int sig)
     running = false;
 }
 
-void handle_event_callback(void *ctx, void *data, __u64 data_size)
+int handle_event_callback(void *ctx, void *data, size_t data_size)
 {
     const struct event *evt = data;
     printf("%-8s %-6d %-16s %s\n", "UNLINK", evt->pid, evt->comm, evt->filename);
+    return 0;
 }
 
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
