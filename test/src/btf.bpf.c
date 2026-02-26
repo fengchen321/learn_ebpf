@@ -33,6 +33,7 @@ struct {
 
 const volatile bool targ_failed = false; // record failures
 
+// 所有子函数都应该使用 __always_inline 修饰，以便编译器进行内联处理。
 static __always_inline
 int trace_exit(struct trace_event_raw_sys_exit* ctx)
 {

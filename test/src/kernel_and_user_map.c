@@ -22,9 +22,7 @@ void signal_handler(int sig) {
 int main(int argc, char **argv) {
     struct kernel_and_user_map_bpf *skel;
     int err;
-
-    __u32 next_key;
-    bool has_next = false;
+    int map_fd;
 
     signal(SIGINT, signal_handler);  // Handle Ctrl+C
     signal(SIGTERM, signal_handler);  // Handle termination signals
@@ -38,30 +36,44 @@ int main(int argc, char **argv) {
     err = kernel_and_user_map_bpf__attach(skel);
     if (err) {
         fprintf(stderr, "Failed to attach BPF skeleton\n");
+        kernel_and_user_map_bpf__destroy(skel);
+        return 1;
+    }
+    map_fd = bpf_map__fd(skel->maps.process_map);
+    if (map_fd < 0) {
+        fprintf(stderr, "Failed to get process_map fd: %d\n", map_fd);
+        kernel_and_user_map_bpf__destroy(skel);
+        return 1;
     }
 
     printf("BPF program loaded and attached. Press Ctrl+C to exit.\n");
 
     while (running) {
-        next_key = 0;
-        has_next = true;
-        while (has_next) {
-            int map_fd = bpf_map__fd(skel->maps.process_map);
-            err = bpf_map_get_next_key(map_fd, &next_key, &next_key);
+        __u32 cur_key = 0;
+        __u32 next_key = 0;
+        bool has_cur_key = false;
+
+        while (true) {
+            err = bpf_map_get_next_key(map_fd, has_cur_key ? &cur_key : NULL, &next_key);
             if (err) {
                 if (errno == ENOENT) {
-                    has_next = false;
-                    continue;
+                    break;
                 } else {
                     fprintf(stderr, "Error getting next key: %s\n", strerror(errno));
+                    break;
                 }
-            }   
-            struct process_info info;
+            }
+
+            struct process_info info = {};
             err = bpf_map_lookup_elem(map_fd, &next_key, &info);
             if (err) {
                 fprintf(stderr, "Error looking up process info: %s\n", strerror(errno));
+            } else {
+                printf("PID: %d, Name: %s\n", info.pid, info.comm);
             }
-            printf("PID: %d, Name: %s\n", info.pid, info.comm);
+
+            cur_key = next_key;
+            has_cur_key = true;
         }
         sleep(1);
     }

@@ -6,27 +6,40 @@
 #include <bpf/bpf.h>
 #include <bpf/libbpf.h>
 #include <errno.h>
+#include <stdbool.h>
 
 static struct bpf_map_create_opts map_opts = { .sz = sizeof(map_opts) };
 
 int iterate_hash_map(int map_fd, __u32 key_size, __u32 value_size) {
-    void *key = NULL;
-    void *next_key = malloc(key_size);
-    void *value = malloc(value_size);
-    
-    while (bpf_map_get_next_key(map_fd, key, next_key) == 0) {
-        if (bpf_map_lookup_elem(map_fd, next_key, value) == 0) {
-            printf("Key: %d, Value: %llu\n", 
-                   *(int*)next_key, *(unsigned long long*)value);
-        }
-        
-        key = next_key;
-        next_key = malloc(key_size);
+    void *cur_key = calloc(1, key_size);
+    void *next_key = calloc(1, key_size);
+    void *value = calloc(1, value_size);
+    bool has_cur_key = false;
+    int ret = 0;
+
+    if (!cur_key || !next_key || !value) {
+        fprintf(stderr, "Failed to allocate memory for map iteration\n");
+        ret = -ENOMEM;
+        goto out;
     }
-    
+
+    while (bpf_map_get_next_key(map_fd, has_cur_key ? cur_key : NULL, next_key) == 0) {
+        if (bpf_map_lookup_elem(map_fd, next_key, value) == 0) {
+            printf("Key: %lld, Value: %lld\n",
+                   *(long long *)next_key, *(long long *)value);
+        } else {
+            fprintf(stderr, "Failed to lookup key: %s\n", strerror(errno));
+        }
+
+        memcpy(cur_key, next_key, key_size);
+        has_cur_key = true;
+    }
+
+out:
+    free(cur_key);
     free(next_key);
     free(value);
-    return 0;
+    return ret;
 }
 
 static void test_hashmap()
@@ -100,6 +113,8 @@ static void test_hashmap()
 
     printf("\nafter delete, hashmap elements:\n");
     iterate_hash_map(fd, key_size, value_size);
+
+    close(fd);
 }
 
 int main(void)

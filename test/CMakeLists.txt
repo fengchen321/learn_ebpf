@@ -6,8 +6,71 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ========== 基础配置 ==========
-set(BPFTOOL_EXECUTABLE "/usr/local/bin/bpftool")
 set(CLANG_EXECUTABLE "clang")
+
+set(_bpftool_check_rc 1)
+if(BPFTOOL_EXECUTABLE)
+  execute_process(
+    COMMAND ${BPFTOOL_EXECUTABLE} version
+    RESULT_VARIABLE _bpftool_check_rc
+    OUTPUT_QUIET
+    ERROR_QUIET
+  )
+  if(NOT _bpftool_check_rc EQUAL 0)
+    message(WARNING
+      "Configured BPFTOOL_EXECUTABLE='${BPFTOOL_EXECUTABLE}' is unusable; "
+      "trying auto-detection."
+    )
+    unset(BPFTOOL_EXECUTABLE CACHE)
+    unset(BPFTOOL_EXECUTABLE)
+  endif()
+endif()
+
+# 可通过 -DBPFTOOL_EXECUTABLE=/path/to/bpftool 手动覆盖
+if(NOT BPFTOOL_EXECUTABLE)
+  file(GLOB _LINUX_TOOLS_BPFTOOL_CANDIDATES "/usr/lib/linux-tools/*/bpftool")
+  list(SORT _LINUX_TOOLS_BPFTOOL_CANDIDATES)
+  list(REVERSE _LINUX_TOOLS_BPFTOOL_CANDIDATES)
+
+  foreach(_bpftool_candidate IN LISTS _LINUX_TOOLS_BPFTOOL_CANDIDATES)
+    execute_process(
+      COMMAND ${_bpftool_candidate} version
+      RESULT_VARIABLE _bpftool_candidate_rc
+      OUTPUT_QUIET
+      ERROR_QUIET
+    )
+    if(_bpftool_candidate_rc EQUAL 0)
+      set(BPFTOOL_EXECUTABLE "${_bpftool_candidate}")
+      set(_bpftool_check_rc 0)
+      break()
+    endif()
+  endforeach()
+endif()
+
+if(NOT BPFTOOL_EXECUTABLE)
+  find_program(BPFTOOL_EXECUTABLE
+    NAMES bpftool
+    HINTS /usr/local/bin /usr/bin /usr/sbin /bin /sbin
+    DOC "Path to bpftool executable"
+  )
+  if(BPFTOOL_EXECUTABLE)
+    execute_process(
+      COMMAND ${BPFTOOL_EXECUTABLE} version
+      RESULT_VARIABLE _bpftool_check_rc
+      OUTPUT_QUIET
+      ERROR_QUIET
+    )
+  endif()
+endif()
+
+set(BPFTOOL_EXECUTABLE "${BPFTOOL_EXECUTABLE}" CACHE FILEPATH "Path to bpftool executable")
+
+if(NOT BPFTOOL_EXECUTABLE OR NOT _bpftool_check_rc EQUAL 0)
+  message(FATAL_ERROR
+    "usable bpftool not found. Please install bpftool or set "
+    "-DBPFTOOL_EXECUTABLE=/path/to/bpftool"
+  )
+endif()
 
 # ========== 查找依赖 ==========
 find_path(LIBBPF_INCLUDE_DIR
